@@ -1,0 +1,842 @@
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="buttonScript.js"></script>
+		<script src="rangeslider.js"></script>
+        <!--<script src='https://www.google.com/recaptcha/api.js'></script>-->
+		<link rel="stylesheet" type="text/css" href="buttonCss.css" />
+		<link rel="stylesheet" type="text/css" href="rangeslider.css" />
+		<style>
+			body {
+				font-family: Helvetica;
+				margin: 0;
+				padding: 0;
+				background-color: #0e83cd;
+				color: white;
+                -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                 -khtml-user-select: none; /* Konqueror HTML */
+                   -moz-user-select: none; /* Firefox */
+                    -ms-user-select: none; /* Internet Explorer/Edge */
+                        user-select: none; /* Non-prefixed version, currently
+                                              supported by Chrome and Opera */
+			}
+			h1 {
+				font-size: 90px;
+			}
+			#kiGame {
+				outline: 1px solid blue; 
+			}
+			#turnSlider {
+                display: none;
+                z-index: 100;
+			}
+			.rangeslider {
+                position: absolute;
+                top: 0;
+				color: #3399ff;
+				width: 100vw;;
+                z-index: 100;
+			}
+			.rangeslider__fill {
+				background: #3399ff;
+				border-radius: 0;;
+                z-index: 100;
+			}
+			.rangeslider__handle {
+				border-radius: 0px;
+				min-width: 62px;
+				line-height: 42px;
+				text-align: center;
+				font-size: 24px;
+				font-weight: bold;
+				font-family: Helvetica;;
+                z-index: 100;
+
+				&:after {
+					background: 0;;
+                    z-index: 100;
+				}
+			}
+			#wrapper {
+				position: relative;
+                z-index: 5;
+			}
+			#wrapper canvas {
+			    position: absolute;
+			    top: 0;
+			    left: 0;
+                z-index: 5;
+			}
+            .gameTitle {
+                padding: 10px;
+            }
+            #loadScreen, #uploadScreen, #turnSlider {
+                display: none;
+            }
+            #logID, #teamID {
+                margin-left: 50px; 
+                width: 400px; 
+                height: 72px; 
+                font-size: 36px; 
+                padding: 10px;
+                background-color: transparent;
+                border: 0;
+                border-bottom: 3px solid white;
+                outline: 0;
+                color: white;
+            }
+            #inputFile input {
+                position: absolute;
+                z-index: 1000;
+                opacity: 0;
+                cursor: pointer;
+                right: 0;
+                top: 0;
+                height: 100%;
+                font-size: 24px;
+                width: 100%;
+            }
+            #inputFile {
+                margin-left: 50px;
+            }
+            table {
+                text-align: center;
+            }
+            #displayID {
+                display: none;
+            }
+		</style>
+	</head>
+	<body>
+        <center><div id="displayID" class="gameTitle">KNOWLEDGE ISLAND - Game ID: <span id="gameID">000</span></div></center>
+        <input
+            id="turnSlider"
+            type="range"
+            min="0"                 
+            max="1000"                
+            step="1"                
+            value="0" 
+            data-orientation="horizontal"
+
+        / >
+		<div id="wrapper">
+			<canvas id="kiGame" width="0" height="0"></canvas>
+			<canvas id="kiCounters" width="0" height="0"></canvas>
+			<canvas id="kiObjects" width="0" height="0"></canvas>
+		</div>
+        <div id="main">
+            <center>
+                <br />
+                <h1 id="title">KNOWLEDGE ISLAND webAI</h1>
+                <div id="mainButtons">
+                    <button onclick="btn_uploadScreen()" class="btn btn-1 btn-1e">Upload AI</button>
+                    <button onclick="btn_loadScreen()" class="btn btn-1 btn-1e">Play Log</button>
+                    <br />
+                    <br />
+                    <span>1. Upload AIs first, then it will give you a log file name</span>
+                    <br />
+                    <span>2. Enter the log file name in the Play Log section</span>
+                </div>
+                <div id="uploadScreen">
+                    <form action="ai/upload.php" method="POST" enctype="multipart/form-data" target="_blank">
+                        <span style="font-size: 48px">Upload AI Files</span><br /><br />
+                    
+                        <span style="font-size: 36px;">Team Name:</span><input type="text" id="teamID" name="teamID" /><br /><br />
+                        
+                        <table>
+                            <tr>
+                                <td><span style="font-size: 36px;">AI A:</span></td>
+                                <td>
+                                    <button id="inputFile" class="btn btn-1 btn-1a">
+                                        Select File
+                                        <input id="AI_A" type="file" name="AI_A" />
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><span id="AI_A_name" style="font-size: 20px;">AI_A_FILENAME</span></td>
+                            </tr>
+                            <tr>
+                                <td><span style="font-size: 36px;">AI B:</span></td>
+                                <td>
+                                    <button id="inputFile" class="btn btn-1 btn-1a">
+                                        Select File
+                                        <input id="AI_B" type="file" name="AI_B" />
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><span id="AI_B_name" style="font-size: 20px;">AI_B_FILENAME</span></td>
+                            </tr>
+                            <tr>
+                                <td><span style="font-size: 36px;">AI C:</span></td>
+                                <td>
+                                    <button id="inputFile" class="btn btn-1 btn-1a">
+                                        Select File
+                                        <input id="AI_C" type="file" name="AI_C" />
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><span id="AI_C_name" style="font-size: 20px;">AI_C_FILENAME</span></td>
+                            </tr>
+                        </table>
+                        <br />
+                        <br />
+                        <!--<button
+                            class="g-recaptcha"
+                            data-sitekey="6LenzCEUAAAAAMvcg9UVo5O9SUy-KPRwn2dMaPb_"
+                            data-callback="YourOnSubmitFn">
+                            Submit
+                        </button>-->
+                        <br />
+
+                        <!--<input type="submit" name="submit" value="Upload" class="btn btn-1 btn-1a" /> -->
+                        <button type="button" onclick="btn_mainScreen()" class="btn btn-4 btn-4d">Back</button>
+                        <button id="aiUpload" class="btn btn-1 btn-1a">Upload</button>
+                        <div id="err"></div>
+                        <!--<button id="uploadAI" class="btn btn-1 btn-1e">Upload AI</button><br />-->
+                    </form>
+                </div>
+                <div id="loadScreen">
+                    <span style="font-size: 36px;">Log Name:</span><input type="text" id="logID" /><br /><br /><br />
+                    <button onclick="btn_mainScreen()" class="btn btn-4 btn-4d">Back</button>
+                    <button id="btn_loadData" class="btn btn-1 btn-1e">Load Data</button><br /><br /><br />
+                    <span id="loading" style="font-size: 36px;"></span><br /><br />
+                    <span>Please only click load data once. It takes a few seconds.</span><br />
+                    <span>If it says log file not found, then your AIs didn't compile / run properly. Make sure they compile and run well.</span>
+                </div>
+            </center>
+        </div>
+		<!--<br/>
+		<span id="success"></span>
+		<br />
+		<span id="result"></span>-->
+	</body>
+	<script>
+        var gamePlayed = false;
+		function btn_uploadScreen() {
+            hideScreens();
+            setTimeout(function() {
+                $("#uploadScreen").fadeIn(300)
+            }, 300);
+        }
+        function btn_loadScreen() {
+            hideScreens();
+            setTimeout(function() {
+                $("#loadScreen").fadeIn(300)
+            }, 300);
+        }
+        
+        function btn_mainScreen() {
+            hideScreens();
+            setTimeout(function() {
+                $("#mainButtons").fadeIn(300)
+            }, 300);
+        }
+        function hideScreens() {
+            $("#mainButtons").fadeOut(300);
+            $("#loadScreen").fadeOut(300);
+            $("#uploadScreen").fadeOut(300);
+        }
+		function updateHandle(el, val) {
+			el.textContent = val;
+		}
+        
+        window.onload = function() {
+            $('#AI_A').change(function() {
+                var filename = $(this).val();
+                var lastIndex = filename.lastIndexOf("\\");
+                if (lastIndex >= 0) {
+                    filename = filename.substring(lastIndex + 1);
+                }
+                $('#AI_A_name').text(filename);
+            });
+            $('#AI_B').change(function() {
+                var filename = $(this).val();
+                var lastIndex = filename.lastIndexOf("\\");
+                if (lastIndex >= 0) {
+                    filename = filename.substring(lastIndex + 1);
+                }
+                $('#AI_B_name').text(filename);
+            });
+            $('#AI_C').change(function() {
+                var filename = $(this).val();
+                var lastIndex = filename.lastIndexOf("\\");
+                if (lastIndex >= 0) {
+                    filename = filename.substring(lastIndex + 1);
+                }
+                $('#AI_C_name').text(filename);
+            });
+            $(window).resize(function(){
+                if(gamePlayed == true) {
+                    filledTheOtherTiles = false;
+                    setupCanvas();
+
+                    $("head").append('<style type="text/css"></style>');
+                    var newStyleElement = $("head").children(':last');
+                    newStyleElement.html('.rangeslider{top:'+($(window).height() * 0.93 * ($(window).width() / 1920) + 37)+';}');
+
+                    updateBoard(gcurrentTurn);
+                }
+            });
+            if(window.location.hash) {
+                var hash = window.location.hash.substring(1); 
+                $("#logID").val(hash);
+                loadData();
+            }
+        };
+        
+        
+		var board_disciplines = []
+		var board_dice = []
+		//var board_tiles = []
+		var turns_dice = []
+		var turns_player = []
+		var turns_tiles = new Array()
+		var turns_actions = new Array()
+		var turns_playerStats = [];
+		var turns_originalPlayerStats = [];
+		var jsonReply;
+        var logID;
+		$('#btn_loadData').click(function() {
+            loadData();
+		});
+        
+        function loadData() {
+            logID = $("#logID").val()
+            $("#loading").text("LOADING GAME " + logID + "...");
+			$.ajax({
+				type: "POST",
+				url: "index.php",
+				dataType: "json",
+                data: {logName: logID, mode: "log"},
+				success: function(data) {
+                    if(data == "404") {
+                        alert("File Not Found")
+                    }
+					jsonReply = data;
+					turns_dice = []
+					turns_player = []
+					turns_actions = []
+					board_disciplines = []
+					board_dice = []
+					//board_tiles = []
+					var y = 0
+					var z = 0
+					$.each(data, function(xname, game) {
+						$.each(game, function(yname, turn) {
+							if(yname == "board") {
+								$.each(turn, function(zname, boardPos) {
+									board_disciplines.push(boardPos.dis)
+									board_dice.push(boardPos.die)
+								})
+							} else if (yname == "stats") {
+								//turns_playerStats[0] = new Array()
+								$.each(turn, function(zname, action) {
+									//turns_playerStats[0].push([action.stu_0, action.stu_1, action.stu_2, action.stu_3, action.stu_4, action.stu_5, 20, 0, 2, 0, 0, 0]);
+									turns_originalPlayerStats.push([ action.s0, action.s1, action.s2, action.s3, action.s4, action.s5,  20, 0, 2, 0, 0, 0]);
+									turns_playerStats.push([ action.s0, action.s1, action.s2, action.s3, action.s4, action.s5,  20, 0, 2, 0, 0, 0]);
+								})
+							} else {
+								turns_dice.push(turn.d)
+								turns_player.push(turn.p-1)
+								turns_actions[y] = new Array()
+								turns_tiles[y] = new Array()
+								z = 0
+								$.each(turn.a, function(zname, action) {
+									turns_tiles[y][z] = action.tiles;
+									turns_actions[y][z] = [action.ac, action.s0, action.s1, action.s2, action.s3, action.s4, action.s5, action.k, action.a, action.c, action.g, action.i, action.p]
+									z++
+								});
+								y++
+							}
+						});
+					});
+					//alert(turns_actions[16].length)
+					$("#main").fadeOut(300);
+                    $("body").css("overflow-x", "hidden");
+                    $("body").css("overflow-y", "hidden");
+                    setTimeout(function() {
+                        gamePlayed = true;
+                        $("#displayID").show();
+                        $("#turnSlider").show();
+                        setTimeout(function() {
+                            $("#gameID").html(logID);
+                            setupCanvas();
+                           // alert( $(window).height() * ($(window).width() / 1920))
+                            //$("#turnSlider").css("margin-top", $(window).height() * ($(window).width() / 1920))
+                            $("head").append('<style type="text/css"></style>');
+                            var newStyleElement = $("head").children(':last');
+                            newStyleElement.html('.rangeslider{top:'+($(window).height() * 0.9 * ($(window).width() / 1920) + 37)+';}');
+                            $('#turnSlider').attr({max: turns_actions.length - 1, min: -1, value: -1});
+                            $('#turnSlider').rangeslider({
+                                polyfill: false,
+                                onInit: function() {
+                                    $handle = $('.rangeslider__handle', this.$range);
+                                    updateHandle($handle[0], this.value);
+                                }
+                            })
+                            .on('input', function() {
+                                updateHandle($handle[0], this.value);
+                            });
+                            $("#success").html("Load Data Success");
+                            $("#turnSlider").show();
+                        }, 10);
+                    }, 350);
+				}
+			})
+        }
+
+		var tilePaths = ["images/THD.png", "images/BPS.png", "images/BQN.png", "images/MJOBS.png", "images/MTV.png", "images/MMONEY.png", "images/WATER.png"];
+        var tileNamePaths = ["images/THD_TEXT.png", "images/BPS_TEXT.png", "images/BQN_TEXT.png", "images/MJOBS_TEXT.png", "images/MTV_TEXT.png", "images/MMONEY_TEXT.png", "images/WATER_TEXT.png"]
+        var counterPaths = ["images/counters1.png", "", "images/counters2.png", "images/counters3.png", "images/counters4.png", "images/counters5.png", "images/counters6.png", "images/counters7.png", "images/counters8.png", "images/counters9.png", "images/counters10.png", "images/counters11.png", "images/counters12.png"]
+		var resourceName = ["THD", "BPS", "BQN", "MJOBS", "MTV", "MMONEY", "KPI", "ARCS", "CAMPUSES", "GO8s", "IPs", "PUBLICs"];
+        var buildingPaths = ["", "images/UNI_A_CAMPUS.png", "images/UNI_B_CAMPUS.png", "images/UNI_C_CAMPUS.png", "images/UNI_A_GO8.png", "images/UNI_B_GO8.png", "images/UNI_C_GO8.png", "images/UNI_A_ARC.png",  "images/UNI_B_ARC.png", "images/UNI_C_ARC.png", "images/UNI_A_ARC_F.png", "images/UNI_B_ARC_F.png", "images/UNI_C_ARC_F.png", "images/UNI_A_ARC_B.png", "images/UNI_B_ARC_B.png", "images/UNI_C_ARC_B.png"]
+
+		var defaultPositionX = 0;
+		var defaultPositionY = 0;
+		var defaultTileWidth = 0;
+		var defaultTileHeight = 0;
+        var imageHeight = 0;
+        var previousTurnNumber = 0;
+        var gcurrentTurn = 0;
+        var filledTheOtherTiles = false;
+
+		function setupCanvas() {
+			var gameCanvas = document.getElementById("kiGame");
+			gameCanvas.width = 1920;
+			gameCanvas.height = 974 * 0.9;
+			$("#wrapper").css("height", gameCanvas.height);
+			var ctx = gameCanvas.getContext("2d");
+            ctx.scale($(window).width()/1920, $(window).width()/1920);
+			//ctx.scale(0.5, 0.5);
+			ctx.fillStyle = "#000033";
+			ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+			var gameCanvas = document.getElementById("kiObjects");
+			gameCanvas.width = 1920;
+			gameCanvas.height = 974 * 0.9;
+			var ctx = gameCanvas.getContext("2d")
+            ctx.scale($(window).width()/1920, $(window).width()/1920);
+			//ctx.scale(0.5, 0.5);
+			ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+			fillTiles();
+            
+			var gameCanvas = document.getElementById("kiCounters");
+			gameCanvas.width = 1920;
+			gameCanvas.height = 974 * 0.9;
+			var ctx = gameCanvas.getContext("2d")
+            ctx.scale($(window).width()/1920, $(window).width()/1920);
+
+			var gameCanvas = document.getElementById("kiObjects");
+			var ctx = gameCanvas.getContext("2d")
+			ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+			ctx.font = "30px Helvetica";
+			ctx.fillStyle = "white";
+			ctx.fillText("Turn: -1",10,50);
+			ctx.fillText("Dice: undefined",10,85);
+
+			for (var x = 0; x < 3; x++) {
+                var fillStyles = ["#ff4c49", "#ffcd49", "#f760b9"]
+				ctx.fillText("UNI " + String.fromCharCode(65 + x) + " STATS", 900 + 250 * (x+1), 50);
+                ctx.fillStyle = "white";
+				for(var y = 0; y < 12; y++) {
+					ctx.fillText(resourceName[y] + ": " + turns_originalPlayerStats[x][y], 900 + 250 * (x+1), 80 + 35 * (y+1));
+				}
+			}
+
+			ctx.fillStyle = "grey";
+			ctx.font = "24px Helvetica";
+			ctx.fillText("*Resources each uni ended their turns with", 900 + 250, 80 + 35 * 15);
+			ctx.fillText("*Player of current turn is highlighted", 900 + 250, 80 + 35 * 16);
+		}
+
+		function fillTiles() {
+			var gameCanvas = document.getElementById("kiGame");
+			var ctx = gameCanvas.getContext("2d")
+			imageHeight = gameCanvas.height / 6;
+			//DRAW TILES
+			for (var i = 0; i < board_disciplines.length; i++) {
+				var img = new Image();
+				img.src = tilePaths[board_disciplines[i]];
+				img.num = i
+				img.imageHeight = imageHeight
+				img.onload = function() {
+					var newWidth = (this.width * this.imageHeight) / this.height;
+					defaultTileWidth = newWidth;
+					var newHeight = imageHeight;
+					defaultTileHeight = newHeight;
+					defaultPositionX = gameCanvas.width / 3 - 2 * newWidth;
+					defaultPositionY = gameCanvas.height / 2 - 2.5 * newHeight;    
+					if (this.num < 3) {
+						ctx.drawImage(this, defaultPositionX, defaultPositionY + newHeight * this.num + newHeight, newWidth, newHeight);
+					} else if (this.num < 7) {
+						ctx.drawImage(this, defaultPositionX + newWidth * 0.75, defaultPositionY + newHeight * (this.num - 3) + newHeight * 0.5, newWidth, newHeight);
+					} else if (this.num < 12) {
+						ctx.drawImage(this, defaultPositionX + newWidth * 2 * 0.75, defaultPositionY + newHeight * (this.num - 7), newWidth, newHeight);
+					} else if (this.num < 16) {
+						ctx.drawImage(this, defaultPositionX + newWidth * 3 * 0.75, defaultPositionY + newHeight * (this.num - 12) + newHeight * 0.5, newWidth, newHeight);
+					} else if (this.num < 19) {
+						ctx.drawImage(this, defaultPositionX + newWidth * 4 * 0.75, defaultPositionY + newHeight * (this.num - 16) + newHeight, newWidth, newHeight);
+					}
+                    drawBuildings(-1)
+                    fillTheOtherTiles();
+				}
+			}
+		}
+        function fillTheOtherTiles() {
+            if(filledTheOtherTiles == false) {
+                var gameCanvas = document.getElementById("kiGame");
+                var ctx = gameCanvas.getContext("2d")
+                for (var i = 0; i < board_disciplines.length; i++) {
+                    var img = new Image();
+                    img.src = tileNamePaths[board_disciplines[i]];
+                    img.num = i
+                    img.imageHeight = imageHeight
+                    img.onload = function() {
+                        var newWidth = (this.width * this.imageHeight) / this.height;
+                        var newHeight = imageHeight;   
+                        if (this.num < 3) {
+                            ctx.drawImage(this, defaultPositionX, defaultPositionY + (newHeight * this.num + newHeight) - newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 7) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 0.75, defaultPositionY + (newHeight * (this.num - 3) + newHeight * 0.5) - newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 12) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 2 * 0.75, defaultPositionY + (newHeight * (this.num - 7)) - newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 16) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 3 * 0.75, defaultPositionY + (newHeight * (this.num - 12) + newHeight * 0.5) - newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 19) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 4 * 0.75, defaultPositionY + (newHeight * (this.num - 16) + newHeight) - newHeight/5.5, newWidth, newHeight);
+                        }
+                    }
+                    var img1 = new Image();
+                    img1.src = counterPaths[0];
+                    img1.num = i
+                    img1.imageHeight = imageHeight
+                    img1.onload = function() {
+                        var newWidth = (this.width * this.imageHeight) / this.height;
+                        var newHeight = imageHeight;   
+                        if (this.num < 3) {
+                            ctx.drawImage(this, defaultPositionX, defaultPositionY + (newHeight * this.num + newHeight) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 7) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 0.75, defaultPositionY + (newHeight * (this.num - 3) + newHeight * 0.5) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 12) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 2 * 0.75, defaultPositionY + (newHeight * (this.num - 7)) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 16) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 3 * 0.75, defaultPositionY + (newHeight * (this.num - 12) + newHeight * 0.5) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 19) {
+                            ctx.drawImage(this, defaultPositionX + newWidth * 4 * 0.75, defaultPositionY + (newHeight * (this.num - 16) + newHeight) + newHeight/5.5, newWidth, newHeight);
+                        }
+                    }
+                }
+                var gameCanvas2 = document.getElementById("kiCounters");
+                var ctx2 = gameCanvas.getContext("2d")
+                for (var i = 0; i < board_disciplines.length; i++) {
+                    var img2 = new Image();
+                    img2.src = counterPaths[board_dice[i]];
+                    img2.num = i
+                    img2.imageHeight = imageHeight
+                    img2.onload = function() {
+                        var newWidth = (this.width * this.imageHeight) / this.height;
+                        var newHeight = imageHeight;   
+                        if (this.num < 3) {
+                            ctx2.drawImage(this, defaultPositionX, defaultPositionY + (newHeight * this.num + newHeight) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 7) {
+                            ctx2.drawImage(this, defaultPositionX + newWidth * 0.75, defaultPositionY + (newHeight * (this.num - 3) + newHeight * 0.5) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 12) {
+                            ctx2.drawImage(this, defaultPositionX + newWidth * 2 * 0.75, defaultPositionY + (newHeight * (this.num - 7)) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 16) {
+                            ctx2.drawImage(this, defaultPositionX + newWidth * 3 * 0.75, defaultPositionY + (newHeight * (this.num - 12) + newHeight * 0.5) + newHeight/5.5, newWidth, newHeight);
+                        } else if (this.num < 19) {
+                            ctx2.drawImage(this, defaultPositionX + newWidth * 4 * 0.75, defaultPositionY + (newHeight * (this.num - 16) + newHeight) + newHeight/5.5, newWidth, newHeight);
+                        }
+                    }
+                }
+            }
+            filledTheOtherTiles = true;
+        }
+
+		$(document).on('input', '#turnSlider', function(e) {
+			updateBoard(e.currentTarget.value);
+            gcurrentTurn = e.currentTarget.value;
+		});
+        
+        function updateBoard(turnNumber) {
+            if(turnNumber == -1) {
+                for(var i = 0; i < 12; i++) {
+                    for(var n = 0; n < 3; n++) {
+                        turns_playerStats[n][i] = turns_originalPlayerStats[n][i]
+                    }
+                }
+            } else {
+                for (var i = 0; i < 12; i++) {
+                    if(turnNumber >= 3) {
+                        if(turns_player[turnNumber] == 0) {
+                            turns_playerStats[0][i] = turns_actions[turnNumber][turns_actions[turnNumber].length - 1][i+1];
+                            turns_playerStats[1][i] = turns_actions[turnNumber-2][turns_actions[turnNumber-2].length - 1][i+1];
+                            turns_playerStats[2][i] = turns_actions[turnNumber-1][turns_actions[turnNumber-1].length - 1][i+1];
+                        } else if(turns_player[turnNumber] == 1) {
+                            turns_playerStats[0][i] = turns_actions[turnNumber-1][turns_actions[turnNumber-1].length - 1][i+1];
+                            turns_playerStats[1][i] = turns_actions[turnNumber][turns_actions[turnNumber].length - 1][i+1];
+                            turns_playerStats[2][i] = turns_actions[turnNumber-2][turns_actions[turnNumber-2].length - 1][i+1];
+                        } else if(turns_player[turnNumber] == 2) {
+                            turns_playerStats[0][i] = turns_actions[turnNumber-2][turns_actions[turnNumber-2].length - 1][i+1];
+                            turns_playerStats[1][i] = turns_actions[turnNumber-1][turns_actions[turnNumber-1].length - 1][i+1];
+                            turns_playerStats[2][i] = turns_actions[turnNumber][turns_actions[turnNumber].length - 1][i+1];
+                        }
+                    } else {
+                        turns_playerStats[0][i] = turns_originalPlayerStats[0][i]
+                        turns_playerStats[1][i] = turns_originalPlayerStats[1][i]
+                        turns_playerStats[2][i] = turns_originalPlayerStats[2][i]
+                        if(turnNumber >= 0) {
+                            turns_playerStats[0][i] = turns_actions[0][turns_actions[turnNumber].length - 1][i+1];
+                        }
+                        if(turnNumber >= 1) {
+                            turns_playerStats[1][i] = turns_actions[1][turns_actions[turnNumber].length - 1][i+1];
+                        }
+                        if(turnNumber >=2) {
+                            turns_playerStats[2][i] = turns_actions[2][turns_actions[turnNumber].length - 1][i+1];
+                        }
+                    }
+                }
+            }
+			var gameCanvas = document.getElementById("kiObjects");
+			var ctx = gameCanvas.getContext("2d")
+            var fillStyles = ["#ff4c49", "#ffcd49", "#f760b9"]
+			ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+			ctx.font = "30px Helvetica";
+			ctx.fillStyle = "white";
+			ctx.fillText("Turn: " + turnNumber,10,50);
+			ctx.fillText("Dice: " + turns_dice[turnNumber],10,85);
+
+			for (var x = 0; x < 3; x++) {
+                ctx.fillStyle = fillStyles[x];
+				ctx.fillText("UNI " + String.fromCharCode(65 + x) + " STATS", 900 + 250 * (x+1), 50);
+				if(turns_playerStats[x][6] >= 150) {
+					ctx.fillStyle = "lightgreen";
+				} else {
+					//if(x == turns_player[turnNumber]) {
+						ctx.fillStyle = "white";
+					//} else {
+					//	ctx.fillStyle = "gray";
+					//}
+				}
+				for(var y = 0; y < 12; y++) {
+					ctx.fillText(resourceName[y] + ": " + turns_playerStats[x][y], 900 + 250 * (x+1), 80 + 35 * (y+1));
+				}
+			}
+			ctx.fillStyle = "lightgreen";
+			ctx.fillRect(900+250*(turns_player[turnNumber]+1),80+35*13,200,5);
+
+			ctx.fillStyle = "grey";
+			ctx.font = "24px Helvetica";
+			ctx.fillText("*Resources each uni ended their turns with", 900 + 250, 80 + 35 * 15);
+			ctx.fillText("*Player of current turn is highlighted", 900 + 250, 80 + 35 * 16);
+			/*var outString = ""
+			
+			outString += "<br />Turn: " + turnNumber
+			outString += "<br />Dice: " + turns_dice[turnNumber]
+			outString += "<br />Player: " + turns_player[turnNumber]
+			outString += "<br />Actions: "
+			var x = parseInt(turnNumber)
+			for (var y = 0; y < turns_actions[x].length; y++) {
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;Action [" + y + "]"
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Action Code: " + turns_actions[x][y][0]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;THD students: " + turns_actions[x][y][1]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BPS students: " + turns_actions[x][y][2]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BQN students: " + turns_actions[x][y][3]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MJ students: " + turns_actions[x][y][4]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MTV students: " + turns_actions[x][y][5]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MMONEY students: " + turns_actions[x][y][6]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;KPI: " + turns_actions[x][y][7]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ARC: " + turns_actions[x][y][8]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CAMPUS: " + turns_actions[x][y][9]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GO8: " + turns_actions[x][y][10]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IP: " + turns_actions[x][y][11]
+				outString += "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PUBLICATIONS: " + turns_actions[x][y][12]
+			}
+			$('#result').html(outString);*/
+			drawBuildings(turnNumber);
+        }
+
+		function drawBuildings(turnNumber) {
+			var newWidth = 0;
+			var newHeight = 0;
+			var gameCanvas = document.getElementById("kiObjects");
+			var ctx = gameCanvas.getContext("2d")
+			//ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+			var imageHeight = gameCanvas.height / 6;
+			var counter = 0;
+			var xOffset = 0;
+			var loopStart = 0;
+			var loopEnd = 0;
+			var loopIncrement = 0;
+			var x = 0;
+			var y = 0;
+            var currentImageNumber = 0;
+            //alert(defaultPositionX + "|" + defaultPositionY)
+            var originalTiles = [2,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,2];
+			for (x = 1; x <= 23; x++) {
+                //alert("HI")
+				if (x == 2 || x == 22) {
+					counter = 1.25;
+					loopStart = 6;
+					loopEnd = 16;
+					loopIncrement = 2;
+				} else if (x == 4 || x == 20) {
+					counter = 1;
+					loopStart = 5;
+					loopEnd = 17;
+					loopIncrement = 4;
+				} else if (x == 6 || x == 18) {
+					counter = 0.75;
+					loopStart = 4;
+					loopEnd = 18;
+					loopIncrement = 2;
+				} else if (x == 8 || x == 16) {
+					counter = 0.5;
+					loopStart = 3;
+					loopEnd = 19;
+					loopIncrement = 4;
+				} else if (x == 10 || x == 14) {
+					counter = 0.25;
+					loopStart = 2;
+					loopEnd = 20;
+					loopIncrement = 2;
+				} else if (x == 12) {
+					counter = 0;
+					loopStart = 1;
+					loopEnd = 21;
+					loopIncrement = 4;
+				} else if (x == 1 || x == 23) {
+					counter = 1.5;
+					loopStart = 7;
+					loopEnd = 15;
+					loopIncrement = 4;
+				} else if (x == 3 || x == 5 || x == 19 || x == 21) {
+					counter = 1;
+					loopStart = 5;
+					loopEnd = 17;
+					loopIncrement = 4;
+				} else if (x == 7 || x == 9 || x == 15 || x == 17) {
+					counter = 0.5;
+					loopStart = 3;
+					loopEnd = 19;
+					loopIncrement = 4;
+				} else if (x == 11 || x == 13) {
+					counter = 0;
+					loopStart = 1;
+					loopEnd = 21;
+					loopIncrement = 4;
+				}
+				if (x == 1) {
+					xOffset = 0;
+				} else if (x == 2) {
+					xOffset = defaultTileWidth * 0.125;
+				} else if (x == 3) {
+					xOffset = defaultTileWidth * 0.25;
+				} else if (x == 4) {
+					xOffset = defaultTileWidth * 0.5;
+				} else if (x == 5) {
+					xOffset = defaultTileWidth * 0.75;
+				} else if (x == 6) {
+					xOffset = defaultTileWidth * 0.875;
+				} else if (x == 7) {
+					xOffset = defaultTileWidth * 1;
+				} else if (x == 8) {
+					xOffset = defaultTileWidth * 1.25;
+				} else if (x == 9) {
+					xOffset = defaultTileWidth * 1.5;
+				} else if (x == 10) {
+					xOffset = defaultTileWidth * 1.625;
+				} else if (x == 11) {
+					xOffset = defaultTileWidth * 1.75;
+				} else if (x == 12) {
+					xOffset = defaultTileWidth * 2;
+				} else if (x == 13) {
+					xOffset = defaultTileWidth * 2.25;
+				} else if (x == 14) {
+					xOffset = defaultTileWidth * 2.375;
+				} else if (x == 15) {
+					xOffset = defaultTileWidth * 2.5;
+				} else if (x == 16) {
+					xOffset = defaultTileWidth * 2.75;
+				} else if (x == 17) {
+					xOffset = defaultTileWidth * 3;
+				} else if (x == 18) {
+					xOffset = defaultTileWidth * 3.125;
+				} else if (x == 19) {
+					xOffset = defaultTileWidth * 3.25;
+				} else if (x == 20) {
+					xOffset = defaultTileWidth * 3.5;
+				} else if (x == 21) {
+					xOffset = defaultTileWidth * 3.75;
+				} else if (x == 22) {
+					xOffset = defaultTileWidth * 3.875;
+				} else if (x == 23) {
+					xOffset = defaultTileWidth * 4;
+				}
+				for (y = loopStart; y <= loopEnd; y += loopIncrement) {
+				    var img = new Image();
+					img.buildingOffsetsX = defaultPositionX + xOffset
+					img.buildingOffsetsY = defaultPositionY + defaultTileHeight * counter
+                    var imageID = 0
+                    if(turnNumber != -1) {
+                        imageID = parseInt(turns_tiles[turnNumber][turns_tiles[turnNumber].length - 1][currentImageNumber]);
+                    } else {
+                        imageID = originalTiles[currentImageNumber];
+                    }
+					//alert(counter)
+					//alert(x + " " + y)
+					//alert(x + "," + y + "|" + xOffset + "|" + counter + "|" + defaultTileHeight + "|" + img.buildingOffsetsX + "--" + img.buildingOffsetsY);
+					//var img = new Image();
+                    //alert(turns_tiles[turnNumber][turns_tiles[turnNumber].length - 1][currentImageNumber])
+                    if(imageID >= 6) {
+                        var addToImageID = 0;
+                        if (x == 2 || x == 10 || x == 18) {
+                            if (y % 4 == 2) {
+                                addToImageID = 3;
+                            } else {
+                                addToImageID = 6;
+                            }
+                        } else if (x == 6 || x == 14 || x == 22) {
+                            if (y % 4 == 2) {
+                                addToImageID = 3;
+                            } else {
+                                addToImageID = 6;
+                            }
+                        }
+                        if ((x == 6 || x == 14 || x == 22)) { //
+                            if(addToImageID == 3) {
+                                addToImageID = 6;
+                            } else {
+                                addToImageID = 3;
+                            }
+                        }
+                        imageID += addToImageID;
+                    }
+					img.src = buildingPaths[imageID];
+					//img.buildingOffsetsX = buildingOffsetsX
+					//img.buildingOffsetsY = buildingOffsetsY
+					img.onload = function() {
+						var thisWidth = 50;
+						var thisHeight = 50;
+						//ctx.drawImage(this, this.buildingOffsetsX - thisWidth * 0.5, this.buildingOffsetsY - thisHeight * 0.5, thisWidth, thisHeight);
+						//if((x == 1 && y == 7)) {
+						//	alert(x + " " + y)
+						//	alert(img.buildingOffsetsX + " " + img.buildingOffsetsY)
+						//
+                        ctx.drawImage(this, this.buildingOffsetsX - thisWidth * 0.5, this.buildingOffsetsY - thisHeight * 0.5, thisWidth, thisHeight);
+					}
+					counter += loopIncrement * 0.25;
+                    currentImageNumber++;
+				}
+			}
+		}
+
+	</script>
+</html>
